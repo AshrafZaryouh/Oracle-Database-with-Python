@@ -1,87 +1,332 @@
-# Python-oracledb Examples
+# 🐍 Oracle Database with Python — `python-oracledb` Complete Guide
 
-This directory contains samples for python-oracledb, the Python driver for
-Oracle Database.
+---
 
-### Basic Examples
+## 🌟 Overview
 
-1.  The schemas and SQL objects that are referenced in the samples can be
-    created by running the Python script [create_schema.py][1]. The script
-    requires SYSDBA privileges and will prompt for these credentials as well as
-    the names of the schemas and edition that will be created, unless a number
-    of environment variables are set as documented in the Python script
-    [sample_env.py][2]. Run the script using the following command:
+![python-oracledb-arch](https://github.com/user-attachments/assets/ba461622-2514-4f1d-bcea-6ab6d063c498)
 
-        python create_schema.py
+`python-oracledb` is Oracle’s **official open-source driver for Python**, enabling Python applications to connect seamlessly to **Oracle Database** for SQL, PL/SQL, and advanced data operations.
 
-2.  Run a Python script, for example:
+* ✅ Successor to `cx_Oracle` (fully compatible)
+* ✅ Supports both **Thin** (no client needed) and **Thick** (client library) modes
+* ✅ Implements the **Python DB API 2.0** standard
+* ✅ Built for performance, scalability, and modern async use
 
-        python query.py
+---
 
-3.  After running python-oracledb samples, the schemas and SQL objects can be
-    dropped by running the Python script [drop_schema.py][3]. The script
-    requires SYSDBA privileges and will prompt for these credentials as well as
-    the names of the schemas and edition that will be dropped, unless a number
-    of environment variables are set as documented in the Python script
-    [sample_env.py][2]. Run the script using the following command:
+## ⚙️ Architecture & Modes
 
-        python drop_schema.py
+`python-oracledb` operates in **two modes** — each suited for different environments.
 
-### Examples in a Container
+### **Thin Mode (Default)**
 
-The [containers/samples_and_db](./containers/samples_and_db) directory has a
-Dockerfile for building a container with the samples and a running Oracle
-Database.
+* Pure Python (no Oracle Client installation)
+* Simple deployment and lightweight
+* Ideal for containers, cloud apps, and quick scripts
+* Works with Oracle DB **12.1 and later**
+* Limited access to advanced Oracle features
 
-### Notebooks
+### **Thick Mode (Optional)**
 
-The [notebooks](./notebooks) directory has Jupyter notebooks with runnable
-examples.
+* Uses Oracle Client libraries (like **Instant Client**)
+* Enables full Oracle Database feature set
+* Supports older Oracle versions (as far back as 9.2)
+* Reads Oracle network files (`tnsnames.ora`, `sqlnet.ora`, `oraaccess.xml`)
 
-## About python-oracledb
+```python
+import oracledb
+oracledb.init_oracle_client(lib_dir="/opt/oracle/instantclient_21_12")
+```
 
-- Python-oracledb is the new name for Oracle's popular Python cx_Oracle driver
-  for Oracle Database.
+---
 
-- Python-oracledb is a new major release - the successor to cx_Oracle 8.3.
+## 🧩 Installation
 
-- Python-oracledb is simple and small to install — under 15 MB (including
-  Python package dependencies): `pip install oracledb`
+```bash
+pip install oracledb
+```
 
-- Python-oracledb is now a Thin driver by default - it connects directly to
-  Oracle Database without always needing Oracle Client libraries.
+* Works on Windows, macOS, and Linux
+* Python 3.7+ required
+* For Thick mode: install **Oracle Instant Client** separately
 
-- Python-oracledb has comprehensive functionality conforming to the Python
-  Database API v2.0 Specification, with many additions and just a couple of
-  exclusions.
+---
 
-- A "Thick" mode can be optionally enabled by an application call. This mode
-  has similar functionality to cx_Oracle and supports Oracle Database features
-  that extend the Python DB API. To use this mode, the widely used and tested
-  Oracle Client libraries such as from Oracle Instant Client must be installed
-  separately.
+## 🔌 Supported Versions
 
-- Python-oracledb runs on many platforms including favorites like Linux, macOS
-  and Windows. It can also be used on platforms where Oracle Client libraries
-  are not available (such as Apple M1, Alpine Linux, or IoT devices), or where
-  the client libraries are not easily installed (such as some cloud
-  environments).
+| Component     | Supported Versions    |
+| ------------- | --------------------- |
+| **Python**    | 3.7 – 3.14            |
+| **Oracle DB** | 11.2 – 23c            |
+| **Modes**     | Thin / Thick          |
+| **OS**        | Windows, Linux, macOS |
 
-## Resources
+---
 
-Home page: [oracle.github.io/python-oracledb/](https://oracle.github.io/python-oracledb/)
+## 🔑 Connecting to Oracle Database
 
-Quick start: [Quick Start: Developing Python Applications for Oracle Database](https://www.oracle.com/database/technologies/appdev/python/quickstartpythononprem.html)
+### Basic Connection
 
-Documentation: [python-oracle.readthedocs.io/en/latest/index.html](https://python-oracle.readthedocs.io/en/latest/index.html)
+```python
+import oracledb
 
-PyPI: [pypi.org/project/oracledb/](https://pypi.org/project/oracledb/)
+conn = oracledb.connect(
+    user="hr",
+    password="hr",
+    dsn="localhost/orclpdb1"
+)
+```
 
-Source: [github.com/oracle/python-oracledb](https://github.com/oracle/python-oracledb)
+### Using Context Managers (Recommended)
 
-Upgrading: [Upgrading from cx_Oracle 8.3 to python-oracledb](https://python-oracledb.readthedocs.io/en/latest/user_guide/appendix_c.html#upgrading-from-cx-oracle-8-3-to-python-oracledb)
+```python
+with oracledb.connect(user="hr", password="hr", dsn="localhost/orclpdb1") as conn:
+    with conn.cursor() as cur:
+        cur.execute("SELECT first_name, last_name FROM employees")
+        for row in cur:
+            print(row)
+```
 
+🪄 Context managers automatically clean up connections and cursors.
 
-[1]: https://github.com/oracle/python-oracledb/blob/main/samples/create_schema.py
-[2]: https://github.com/oracle/python-oracledb/blob/main/samples/sample_env.py
-[3]: https://github.com/oracle/python-oracledb/blob/main/samples/drop_schema.py
+---
+
+## 🧵 Connection Pooling
+
+Connection pools boost performance by reusing connections instead of recreating them.
+
+```python
+pool = oracledb.create_pool(
+    user="hr",
+    password="hr",
+    dsn="localhost/orclpdb1",
+    min=2,
+    max=10,
+    increment=1
+)
+
+conn = pool.acquire()
+cur = conn.cursor()
+cur.execute("SELECT COUNT(*) FROM employees")
+print(cur.fetchone())
+pool.release(conn)
+```
+
+💡 **Tip:** Always reuse connections in web or multi-threaded apps.
+
+---
+
+## 🧮 Executing SQL and PL/SQL
+
+### Querying Data
+
+```python
+cur.execute(
+    "SELECT employee_id, first_name FROM employees WHERE department_id = :dept",
+    dept=50
+)
+for emp_id, fname in cur:
+    print(emp_id, fname)
+```
+
+### Inserting Data
+
+```python
+cur.execute(
+    "INSERT INTO employees (employee_id, first_name, last_name) VALUES (:1, :2, :3)",
+    (300, "John", "Doe")
+)
+conn.commit()
+```
+
+### Bulk Inserts
+
+```python
+rows = [
+    (301, "Alice", "Brown"),
+    (302, "Bob", "Green"),
+]
+cur.executemany(
+    "INSERT INTO employees (employee_id, first_name, last_name) VALUES (:1, :2, :3)",
+    rows
+)
+conn.commit()
+```
+
+### Calling PL/SQL Procedures
+
+```python
+cur.callproc("update_salary", [101, 5000])
+```
+
+---
+
+## 📦 Working with JSON & SODA
+
+Oracle’s **Simple Oracle Document Access (SODA)** API enables document-style access to JSON data.
+
+### JSON Query
+
+```python
+cur.execute("SELECT data FROM json_table WHERE data.name = :name", name="Alice")
+for row in cur:
+    print(row[0])  # Returns a Python dict
+```
+
+### SODA Example
+
+```python
+db = conn.db
+collection = db.create_collection("mydocs")
+collection.insert_one({"id": "1", "name": "test", "value": 100})
+
+result = collection.find().filter({"value": {"$gt": 50}}).get_one()
+print(result)
+```
+
+---
+
+## ⚡ Advanced Features
+
+| Feature                                 | Description                                |
+| --------------------------------------- | ------------------------------------------ |
+| **Array Binding**                       | Insert/update multiple rows efficiently    |
+| **LOB Support**                         | Handle CLOB, BLOB, and NCLOB data          |
+| **Scrollable Cursors**                  | Move backward and forward through results  |
+| **Implicit Results**                    | Retrieve multiple result sets from PL/SQL  |
+| **Continuous Query Notification (CQN)** | Receive notifications when data changes    |
+| **Advanced Queuing (AQ)**               | Use Oracle message queues                  |
+| **Session Tagging**                     | Manage pooled session state                |
+| **Client Result Caching**               | Cache query results on client side         |
+| **SODA**                                | Work with JSON documents directly          |
+| **High Availability**                   | Support for Application Continuity and FAN |
+| **Async I/O**                           | Run async queries for high concurrency     |
+
+---
+
+## ⚙️ Asynchronous Example
+
+```python
+import asyncio
+import oracledb
+
+async def main():
+    async with await oracledb.connect_async(
+        user="hr", password="hr", dsn="localhost/orclpdb1"
+    ) as conn:
+        async with conn.cursor() as cur:
+            await cur.execute("SELECT first_name FROM employees")
+            async for row in cur:
+                print(row)
+
+asyncio.run(main())
+```
+
+---
+
+## 🔄 Migrating from `cx_Oracle`
+
+| Change                      | Description                                                    |
+| --------------------------- | -------------------------------------------------------------- |
+| **Keyword-only parameters** | `connect()` and `create_pool()` no longer take positional args |
+| **Removed parameters**      | `encoding`, `nencoding`, `threaded` removed                    |
+| **Default pool behavior**   | Now waits for free connections instead of raising errors       |
+| **JSON columns**            | Fetched as native Python dicts/lists                           |
+| **Error codes**             | New standardized `DPY-` prefix                                 |
+| **Renamed classes**         | `SessionPool` → `ConnectionPool`                               |
+
+🧠 Migration is straightforward — most `cx_Oracle` scripts need only small adjustments.
+
+---
+
+## 🚨 Error Handling
+
+```python
+try:
+    cur.execute("SELECT * FROM invalid_table")
+except oracledb.DatabaseError as e:
+    print("Database error:", e)
+```
+
+### Common Exceptions
+
+* `DatabaseError`
+* `InterfaceError`
+* `OperationalError`
+* `ProgrammingError`
+* `IntegrityError`
+
+---
+
+## 🧠 Performance Optimization Tips
+
+1. ✅ Use **connection pooling**
+2. ✅ Batch inserts with **executemany()**
+3. ✅ Commit in **controlled batches**
+4. ✅ Use **fetchmany()** for large datasets
+5. ✅ Tune **statement caching** and **fetch size**
+6. ✅ Use **context managers** for auto-cleanup
+7. ✅ Handle **timeouts** and **dead connections** gracefully
+8. ✅ Use **Thin mode** unless advanced features are required
+9. ✅ Avoid unnecessary conversions
+10. ✅ Keep **Instant Client** up to date if using Thick mode
+
+---
+
+## ⚠️ Limitations
+
+* Thin mode does not support every Oracle feature (e.g., DRCP, advanced encryption)
+* Must call `init_oracle_client()` before any connection in Thick mode
+* Some features (AQ, SODA) require specific database versions
+* Large LOB operations may require streaming techniques
+
+---
+
+## 💡 Quick Reference Snippets
+
+### ✅ Basic Query
+
+```python
+with oracledb.connect(user="hr", password="hr", dsn="localhost/orclpdb1") as conn:
+    with conn.cursor() as cur:
+        cur.execute("SELECT * FROM departments")
+        for row in cur:
+            print(row)
+```
+
+### ✅ Connection Pool
+
+```python
+pool = oracledb.create_pool(user="hr", password="hr", dsn="localhost/orclpdb1")
+conn = pool.acquire()
+with conn.cursor() as cur:
+    cur.execute("SELECT COUNT(*) FROM employees")
+    print(cur.fetchone())
+pool.release(conn)
+```
+
+### ✅ Async Query
+
+```python
+async with await oracledb.connect_async(user="hr", password="hr", dsn="localhost/orclpdb1") as conn:
+    async with conn.cursor() as cur:
+        await cur.execute("SELECT first_name FROM employees")
+        async for row in cur:
+            print(row)
+```
+
+---
+
+## ✅ Best Practices
+
+* 🌐 Use **Thin mode** for simplicity, **Thick mode** for advanced use
+* 🧩 Always initialize the Oracle client early in Thick mode
+* 🔐 Use **parameterized queries** to prevent SQL injection
+* 💾 Manage transactions explicitly — avoid autocommit
+* 📦 Reuse connections (especially in APIs and web apps)
+* 🚦 Implement retry logic for transient network/database errors
+* 🧭 Use SODA and JSON features for flexible data storage
+* 🧰 Tune and test your connection pool under real workloads
+
+---
